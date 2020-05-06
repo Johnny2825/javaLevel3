@@ -104,6 +104,7 @@ public class ClientHandler {
 
     public void sendMsg(String msg) {
         try {
+            System.out.println(msg);
             out.writeUTF(msg);
         } catch (IOException e) {
             e.printStackTrace();

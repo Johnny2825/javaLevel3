@@ -1,0 +1,18 @@
+Bob зашел в чат
+Mike: hello
+Bob: hello
+Mike: how are you
+Personally from Bob: okey
+Personally to Bob: why?
+Bob: just
+Bob вышел из чата
+Bob зашел в чат
+Bob: new test
+Bob: new how are ypo
+Mike: nice 
+Mike: test here
+Mike: hello
+Bob: hi
+Bob: nice to see you
+Personally from Bob: kek
+Personally to Bob: кекать будешь дома

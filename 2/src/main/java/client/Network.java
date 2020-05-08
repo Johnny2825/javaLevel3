@@ -40,7 +40,7 @@ public class Network implements Closeable {
                 connect();
             }
             out.writeUTF("/auth " + login + " " + password);
-            workWithFile.INSTANCE.setLogin(login);
+            HistoryLogger.INSTANCE.setLogin(login);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -58,24 +58,24 @@ public class Network implements Closeable {
                         msg = in.readUTF();
                         if (msg.startsWith("/authok ")) {
                             callOnAuthenticated.callback(msg.split("\\s")[1]);
-                            workWithFile.INSTANCE.createFile();
+                            HistoryLogger.INSTANCE.createFile();
                             break;
                         } else {
                             callOnException.callback(msg);
                         }
                     }
 
-                    List<String> test;
-                    test = workWithFile.INSTANCE.readFile();
-                    if (!test.isEmpty()){
-                        for(int i = test.size() - 1; i >= 0; i--){
-                            callOnMsgReceived.callback(test.get(i));
+                    List<String> list = HistoryLogger.INSTANCE.readFile();
+                    System.out.println(list);
+                    if (!list.isEmpty()){
+                        for(int i = list.size() - 1; i >= 0; i--){
+                            callOnMsgReceived.callback(list.get(i));
                         }
                     }
 
                     while (true) {
                         msg = in.readUTF();
-                        workWithFile.INSTANCE.write(msg);
+                        HistoryLogger.INSTANCE.write(msg);
                         if (msg.equals("/end")){
                             break;
                         }
@@ -111,7 +111,7 @@ public class Network implements Closeable {
 
     @Override
     public void close() {
-        workWithFile.INSTANCE.closeFile();
+        HistoryLogger.INSTANCE.writeAndCloseFile();
         callOnCloseConnection.callback();
         close(in, out, socket);
     }

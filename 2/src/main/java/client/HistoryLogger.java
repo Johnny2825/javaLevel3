@@ -4,19 +4,19 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class workWithFile {
-    public static final workWithFile INSTANCE = new workWithFile();
+public class HistoryLogger {
+    public static final HistoryLogger INSTANCE = new HistoryLogger();
     private StringBuilder sb;
-    private BufferedWriter bw;
     private File file;
     private String login;
-    private RandomAccessFile raf;
+    private int countLines;
+    private final int HISTORY_LINES_LIMIT = 100;
 
     public void setLogin(String login) {
         this.login = login;
     }
 
-    private workWithFile(){
+    private HistoryLogger(){
     }
 
     public void createFile(){
@@ -30,26 +30,20 @@ public class workWithFile {
                 e.printStackTrace();
             }
         }
-        try {
-            bw = new BufferedWriter(new FileWriter(file, true));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        sb = new StringBuilder();
     }
 
     public void write(String line){
-        sb = new StringBuilder();
-        int count = 0;
-        if (!line.startsWith("/")) {
-            try {
-                bw.write(String.valueOf(sb.append(line).append(System.getProperty("line.separator"))));
-                count ++;
-                if (count == 10){
-                    bw.flush();
-                    count = 0;
+        if (sb != null){
+            if (!line.startsWith("/")) {
+                sb.append(line).append(System.getProperty("line.separator"));
+                countLines++;
+                int countLineForWrite = 10;
+                if (countLines == countLineForWrite){
+                    writeAndCloseFile();
+                    sb = new StringBuilder();
+                    countLines = 0;
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         }
     }
@@ -57,26 +51,20 @@ public class workWithFile {
     public List readFile(){
         List<String> line = new ArrayList<>();
         char c;
-        sb = new StringBuilder();
         int lines = 0;
-
         try {
-            raf = new RandomAccessFile(file, "r");
-            for(long point = file.length() - 2; point > 0; point--){
+            RandomAccessFile raf = new RandomAccessFile(file, "r");
+            for(long point = file.length() - 2; point >= 0; point--){
                 raf.seek(point);
                 c = (char) raf.read();
-                if (c == '\n'){
+                if ((c == '\n') || (point == 0)){
                     line.add(new String(raf.readLine().getBytes("ISO-8859-1"), "UTF-8"));
                     lines ++;
-                    if (lines == 6){
+                    if (lines == HISTORY_LINES_LIMIT){
                         break;
                     }
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        try {
             raf.close();
         } catch (IOException e) {
             e.printStackTrace();
@@ -85,14 +73,14 @@ public class workWithFile {
         return line;
     }
 
-    public void closeFile(){
-        if(bw != null) {
-            try {
-                bw.flush();
-                bw.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+    public void writeAndCloseFile(){
+        try {
+            BufferedWriter bw = new BufferedWriter(new FileWriter(file, true));
+            bw.write(String.valueOf(sb));
+            bw.flush();
+            bw.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

@@ -40,6 +40,7 @@ public class Controller implements Initializable {
         clientsList.setManaged(authenticated);
         if (!authenticated) {
             nickname = "";
+            textArea.clear();
         }
     }
 

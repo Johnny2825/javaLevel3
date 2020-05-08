@@ -5,13 +5,15 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Network implements Closeable {
     private Socket socket;
     private DataInputStream in;
     private DataOutputStream out;
 
-    private Callback callOnMsgReceived;  //
+    private Callback callOnMsgReceived;
     private Callback callOnAuthenticated;
     private Callback callOnException;
     private Callback callOnCloseConnection;
@@ -38,6 +40,7 @@ public class Network implements Closeable {
                 connect();
             }
             out.writeUTF("/auth " + login + " " + password);
+            HistoryLogger.INSTANCE.setLogin(login);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -50,20 +53,33 @@ public class Network implements Closeable {
             out = new DataOutputStream(socket.getOutputStream());
             Thread clientListenerThread = new Thread(() -> {
                 try {
+                    String msg;
                     while (true) {
-                        String msg = in.readUTF();
+                        msg = in.readUTF();
                         if (msg.startsWith("/authok ")) {
                             callOnAuthenticated.callback(msg.split("\\s")[1]);
+                            HistoryLogger.INSTANCE.createFile();
                             break;
                         } else {
-                            callOnException.callback(msg); //сообщения о неправильном лог/пас или повторном испол
+                            callOnException.callback(msg);
                         }
                     }
+
+                    List<String> list = HistoryLogger.INSTANCE.readFile();
+                    System.out.println(list);
+                    if (!list.isEmpty()){
+                        for(int i = list.size() - 1; i >= 0; i--){
+                            callOnMsgReceived.callback(list.get(i));
+                        }
+                    }
+
                     while (true) {
-                        String msg = in.readUTF();
-                        if (msg.equals("/end")) {
+                        msg = in.readUTF();
+                        HistoryLogger.INSTANCE.write(msg);
+                        if (msg.equals("/end")){
                             break;
                         }
+                        System.out.println(msg);
                         callOnMsgReceived.callback(msg);
                     }
 
@@ -73,7 +89,7 @@ public class Network implements Closeable {
                     close();
                 }
             });
-            clientListenerThread.setDaemon(true); //почитать про DAEMON
+            clientListenerThread.setDaemon(true);
             clientListenerThread.start();
         } catch (IOException e) {
             e.printStackTrace();
@@ -84,7 +100,6 @@ public class Network implements Closeable {
         if (out == null) {
             callOnException.callback("Соединение с сервером не установлено");
         }
-
         try {
             out.writeUTF(msg);
             return true;
@@ -96,6 +111,7 @@ public class Network implements Closeable {
 
     @Override
     public void close() {
+        HistoryLogger.INSTANCE.writeAndCloseFile();
         callOnCloseConnection.callback();
         close(in, out, socket);
     }

@@ -40,6 +40,7 @@ public class Controller implements Initializable {
         clientsList.setManaged(authenticated);
         if (!authenticated) {
             nickname = "";
+            textArea.clear();
         }
     }
 
@@ -97,7 +98,6 @@ public class Controller implements Initializable {
 
         network.setCallOnMsgReceived(args -> {
             String msg = args[0].toString();
-            System.out.println(msg);
             if (msg.startsWith("/")){
                 if (msg.startsWith("/newNick")){
                     String[] tokens = msg.split("\\s");

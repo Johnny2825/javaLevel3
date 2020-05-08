@@ -23,7 +23,7 @@ public class BaseAuthService implements AuthService {
     @Override
     public String getNickByLoginPass(String login, String pass) {
         try {
-            //ResultSet resultSet = statement.executeQuery("SELECT * FROM \"Users\"");
+//            ResultSet resultSet = statement.executeQuery("SELECT * FROM \"Users\"");
             preparedStatement = connection.prepareStatement("select \"Login\", \"Password\"," +
                     "\"Nickname\" from \"Users\" where \"Login\" = ? and \"Password\" = ?");
             preparedStatement.setString(1, login);
@@ -63,23 +63,6 @@ public class BaseAuthService implements AuthService {
 
         return status;
     }
-
-//    public void selectAllFromDB() throws SQLException {
-//        ResultSet resultSet = statement.executeQuery("SELECT * FROM \"Users\"");
-//        boolean hasNext = resultSet.next();
-//        if (!hasNext) {
-//            System.out.println("RS is empty");
-//            return;
-//        }
-//        do {
-//            System.out.println(
-//                    resultSet.getInt(1) + " | " +
-//                            resultSet.getString(2) + " | " +
-//                            resultSet.getString(3) + " | " +
-//                            resultSet.getString(4)
-//            );
-//        } while (resultSet.next());
-//    }
 
     @Override
     public void stop() {

@@ -11,7 +11,6 @@ public class ClientHandler {
     private Socket socket;
     private DataInputStream in;
     private DataOutputStream out;
-    private ScheduledExecutorService executorService;
     private Future timer;
     private String name;
 
@@ -22,15 +21,14 @@ public class ClientHandler {
             this.in = new DataInputStream(socket.getInputStream());
             this.out = new DataOutputStream(socket.getOutputStream());
             this.name = "";
-            executorService = Executors.newScheduledThreadPool(2);
 
-            timer = executorService.schedule(() -> {
+            timer = myServer.getExecutorService().schedule(() -> {
                 sendMsg("Время ожидания вышло");
                 closeConnection();
                 System.out.println("Соединение закрыто по времени");
-            }, 120, TimeUnit.SECONDS);
+            }, 5, TimeUnit.SECONDS);
 
-            new Thread(() -> executorService.execute(() -> {
+            new Thread(() -> myServer.getExecutorService().execute(() -> {
                 try {
                     authentication();
                     readMessages();
@@ -40,7 +38,7 @@ public class ClientHandler {
                     closeConnection();
                 }
             }
-            )).start();
+            ));
 
         } catch (IOException e) {
             throw new RuntimeException("Проблемы при создании обработчика клиента");
@@ -133,7 +131,6 @@ public class ClientHandler {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        executorService.shutdown();
     }
 }
 

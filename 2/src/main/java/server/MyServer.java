@@ -5,12 +5,18 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 public class MyServer {
     private final int PORT = 8190;
-
+    private ScheduledExecutorService executorService;
     private Map<String, ClientHandler> clients;
     private AuthService authService;
+
+    public ScheduledExecutorService getExecutorService() {
+        return executorService;
+    }
 
     public AuthService getAuthService() {
         return authService;
@@ -21,6 +27,7 @@ public class MyServer {
             authService = new BaseAuthService();
             authService.start();
             clients = new HashMap<>();
+            executorService = Executors.newScheduledThreadPool(2);
 
             while (true) {
                 System.out.println("Сервер ожидает подключения");
@@ -35,6 +42,7 @@ public class MyServer {
             if (authService != null) {
                 authService.stop();
             }
+            executorService.shutdownNow();
         }
     }
 

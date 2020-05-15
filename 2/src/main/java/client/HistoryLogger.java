@@ -74,13 +74,15 @@ public class HistoryLogger {
     }
 
     public void writeAndCloseFile(){
-        try {
-            BufferedWriter bw = new BufferedWriter(new FileWriter(file, true));
-            bw.write(String.valueOf(sb));
-            bw.flush();
-            bw.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (file != null && sb != null) {
+            try {
+                BufferedWriter bw = new BufferedWriter(new FileWriter(file, true));
+                bw.write(String.valueOf(sb));
+                bw.flush();
+                bw.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

@@ -5,7 +5,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.List;
 
 public class Network implements Closeable {
@@ -34,66 +33,79 @@ public class Network implements Closeable {
         this.callOnCloseConnection = callOnCloseConnection;
     }
 
+    Network() {
+      connect();
+    }
+
     public void sendAuth(String login, String password) {
         try {
-            if (socket == null || socket.isClosed()) {
+            if(socket.isClosed()) {
                 connect();
             }
-            out.writeUTF("/auth " + login + " " + password);
+            if (!socket.isClosed() && out != null){
+                listener();
+                out.writeUTF("/auth " + login + " " + password);
+            } else {
+                callOnException.callback("Соединение с сервером не установлено");
+            }
             HistoryLogger.INSTANCE.setLogin(login);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private void connect() {
+    public void connect(){
         try {
             socket = new Socket("localhost", 8190);
             in = new DataInputStream(socket.getInputStream());
             out = new DataOutputStream(socket.getOutputStream());
-            Thread clientListenerThread = new Thread(() -> {
-                try {
-                    String msg;
-                    while (true) {
-                        msg = in.readUTF();
-                        if (msg.startsWith("/authok ")) {
-                            callOnAuthenticated.callback(msg.split("\\s")[1]);
-                            HistoryLogger.INSTANCE.createFile();
-                            break;
-                        } else {
-                            callOnException.callback(msg);
-                        }
-                    }
-
-                    List<String> list = HistoryLogger.INSTANCE.readFile();
-                    System.out.println(list);
-                    if (!list.isEmpty()){
-                        for(int i = list.size() - 1; i >= 0; i--){
-                            callOnMsgReceived.callback(list.get(i));
-                        }
-                    }
-
-                    while (true) {
-                        msg = in.readUTF();
-                        HistoryLogger.INSTANCE.write(msg);
-                        if (msg.equals("/end")){
-                            break;
-                        }
-                        System.out.println(msg);
-                        callOnMsgReceived.callback(msg);
-                    }
-
-                } catch (IOException e) {
-                    callOnException.callback("Соединение с сервером разорвано");
-                } finally {
-                    close();
-                }
-            });
-            clientListenerThread.setDaemon(true);
-            clientListenerThread.start();
-        } catch (IOException e) {
+        } catch(IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void listener() {
+        Thread clientListenerThread = new Thread(() -> {
+            try {
+                String msg;
+                while (true) {
+                    msg = in.readUTF();
+                    System.out.println(msg);
+                    if (msg.startsWith("/authok ")) {
+                        callOnAuthenticated.callback(msg.split("\\s")[1]);
+                        HistoryLogger.INSTANCE.createFile();
+                        break;
+                    } else {
+                        callOnException.callback(msg);
+                    }
+                }
+
+                List<String> list = HistoryLogger.INSTANCE.readFile();
+                System.out.println(list);
+                if (!list.isEmpty()){
+                    for(int i = list.size() - 1; i >= 0; i--){
+                        callOnMsgReceived.callback(list.get(i));
+                    }
+                }
+
+                while (true) {
+                    msg = in.readUTF();
+                    HistoryLogger.INSTANCE.write(msg);
+                    if (msg.equals("/end")){
+                        break;
+                    }
+                    System.out.println(msg);
+                    callOnMsgReceived.callback(msg);
+                }
+
+            } catch (IOException e) {
+                callOnException.callback("Соединение с сервером разорвано");
+            } finally {
+                close();
+            }
+        });
+        clientListenerThread.setDaemon(true);
+        clientListenerThread.start();
     }
 
     public boolean sendMsg(String msg) {
